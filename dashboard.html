@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PullRider Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto Mono', monospace;
+            background-color: #111827; /* Dark Slate Blue */
+        }
+        .tech-font {
+            font-family: 'Share Tech Mono', monospace;
+        }
+        .stat-card {
+            background-color: rgba(31, 41, 55, 0.5); /* Semi-transparent dark gray */
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(75, 85, 99, 0.5);
+            transition: all 0.3s ease-in-out;
+        }
+        .stat-card:hover {
+            border-color: #3b82f6; /* Blue-500 */
+            transform: translateY(-5px);
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.2);
+        }
+        .glow-text {
+            text-shadow: 0 0 5px #60a5fa, 0 0 10px #60a5fa;
+        }
+        .pulse {
+            animation: pulse-animation 2s infinite;
+        }
+        @keyframes pulse-animation {
+            0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+        }
+    </style>
+</head>
+<body class="text-gray-200 min-h-screen flex items-center justify-center p-4 bg-dots">
+    <div class="w-full max-w-4xl mx-auto">
+        <header class="text-center mb-10">
+            <h1 class="text-5xl font-bold tech-font glow-text">PULLRIDER</h1>
+            <p class="text-blue-400 text-lg">AI Command Center</p>
+        </header>
+
+        <main class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Total PRs Opened -->
+            <div class="stat-card rounded-lg p-6 flex flex-col items-center justify-center text-center">
+                <h2 class="text-lg font-semibold text-gray-400">Total PRs Opened</h2>
+                <p id="total-prs" class="text-6xl font-bold tech-font text-blue-400">--</p>
+            </div>
+
+            <!-- Total Issues Opened -->
+            <div class="stat-card rounded-lg p-6 flex flex-col items-center justify-center text-center">
+                <h2 class="text-lg font-semibold text-gray-400">Total Issues Opened</h2>
+                <p id="total-issues" class="text-6xl font-bold tech-font text-green-400">--</p>
+            </div>
+
+            <!-- Repo Health Status -->
+            <div id="repo-health-card" class="stat-card rounded-lg p-6 flex flex-col items-center justify-center text-center">
+                 <h2 class="text-lg font-semibold text-gray-400">Repo Health</h2>
+                 <div class="flex items-center mt-2">
+                     <div id="health-indicator" class="w-4 h-4 rounded-full bg-gray-500 mr-3"></div>
+                     <p id="repo-health" class="text-2xl font-bold tech-font text-gray-300">Fetching...</p>
+                 </div>
+            </div>
+
+            <!-- Last PR Title -->
+            <div class="stat-card rounded-lg p-6 md:col-span-2 lg:col-span-3">
+                <h2 class="text-lg font-semibold text-gray-400 mb-2">Last PR Opened</h2>
+                <p id="last-pr" class="text-xl tech-font text-gray-300 truncate">N/A</p>
+            </div>
+
+            <!-- Last Issue Title -->
+            <div class="stat-card rounded-lg p-6 md:col-span-2 lg:col-span-3">
+                <h2 class="text-lg font-semibold text-gray-400 mb-2">Last Issue Opened</h2>
+                <p id="last-issue" class="text-xl tech-font text-gray-300 truncate">N/A</p>
+            </div>
+        </main>
+
+        <footer class="text-center mt-10 text-gray-500">
+            <p>Status: <span id="status-text" class="text-green-500">Connected</span></p>
+            <p class="text-xs mt-2">PullRider MVP v1.0 | Built by a future millionaire.</p>
+        </footer>
+    </div>
+
+    <script>
+        // The JavaScript that brings the dashboard to life.
+
+        // IMPORTANT: Make sure your Python server is running and your ngrok tunnel is active.
+        // Replace this URL with your current ngrok URL.
+        const API_URL = 'https://aa47-152-59-202-81.ngrok-free.app/dashboard';
+
+        async function fetchDashboardStats() {
+            const statusText = document.getElementById('status-text');
+            try {
+                console.log('Fetching stats from:', `${API_URL}/dashboard`);
+                statusText.textContent = 'Fetching data...';
+                statusText.classList.remove('text-red-500', 'text-green-500');
+                statusText.classList.add('text-yellow-500');
+
+                const response = await fetch(`${API_URL}/dashboard`);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                console.log('Data received:', data);
+
+                // Update the UI with the new data
+                updateUI(data);
+
+                statusText.textContent = 'Connected';
+                statusText.classList.remove('text-yellow-500');
+                statusText.classList.add('text-green-500');
+
+            } catch (error) {
+                console.error('Failed to fetch dashboard stats:', error);
+                statusText.textContent = `Error: ${error.message}`;
+                statusText.classList.remove('text-yellow-500', 'text-green-500');
+                statusText.classList.add('text-red-500');
+            }
+        }
+
+        function updateUI(data) {
+            document.getElementById('total-prs').textContent = data.total_prs_opened;
+            document.getElementById('total-issues').textContent = data.total_issues_opened;
+            document.getElementById('last-pr').textContent = data.last_pr_title || 'N/A';
+            document.getElementById('last-issue').textContent = data.last_issue_title || 'N/A';
+
+            const healthStatus = document.getElementById('repo-health');
+            const healthIndicator = document.getElementById('health-indicator');
+            const healthCard = document.getElementById('repo-health-card');
+
+            healthStatus.textContent = data.repo_health_status;
+
+            // Update health indicator color and animation
+            healthIndicator.classList.remove('bg-green-500', 'bg-yellow-500', 'bg-red-500', 'pulse');
+            if (data.repo_health_status.toLowerCase() === 'healthy') {
+                healthIndicator.classList.add('bg-green-500', 'pulse');
+            } else if (data.repo_health_status.toLowerCase() === 'warning') {
+                healthIndicator.classList.add('bg-yellow-500');
+            } else {
+                healthIndicator.classList.add('bg-red-500');
+            }
+        }
+
+        // Fetch stats when the page loads, and then every 10 seconds.
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchDashboardStats();
+            setInterval(fetchDashboardStats, 10000); // Refresh every 10 seconds
+        });
+    </script>
+</body>
+</html>

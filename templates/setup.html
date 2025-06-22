@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PullRider Setup</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #02040a;
+            color: #c9d1d9;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            perspective: 1000px; /* This enables 3D space for children */
+        }
+        #aurora-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+        .glass-card {
+            background: rgba(13, 17, 23, 0.5);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transform-style: preserve-3d; /* This is crucial for 3D effects */
+            transition: transform 0.1s ease-out; /* Smooths the 3D movement */
+            animation: float 6s ease-in-out infinite, fadeIn 1s ease-out forwards;
+        }
+        @keyframes float {
+            0% { transform: translateZ(0px) rotateX(5deg) rotateY(-5deg); }
+            50% { transform: translateZ(20px) rotateX(-5deg) rotateY(5deg); }
+            100% { transform: translateZ(0px) rotateX(5deg) rotateY(-5deg); }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .card-content > * {
+            animation: contentFadeIn 1s ease-out 0.5s forwards;
+            opacity: 0;
+        }
+        @keyframes contentFadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .btn-primary {
+            background: linear-gradient(45deg, #2ea043, #238636);
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 20px rgba(35, 134, 54, 0.4);
+        }
+        .btn-primary:hover {
+            transform: translateY(-4px) scale(1.05);
+            box-shadow: 0 10px 30px rgba(35, 134, 54, 0.5);
+        }
+        .input-field {
+            background-color: rgba(1, 4, 9, 0.7);
+            border: 1px solid #30363d;
+            transition: all 0.3s ease;
+        }
+        .input-field:focus {
+            border-color: #58a6ff;
+            box-shadow: 0 0 25px rgba(88, 166, 255, 0.5);
+            outline: none;
+        }
+        .tab {
+            border-color: transparent;
+            transition: all 0.3s ease;
+            color: #8b949e;
+        }
+        .tab.active {
+            border-color: #58a6ff;
+            color: #58a6ff;
+            background-color: rgba(88, 166, 255, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <canvas id="aurora-canvas"></canvas>
+    <div class="glass-card w-full max-w-lg m-4 p-8 rounded-2xl shadow-2xl" id="interactive-card">
+        <div class="card-content">
+            <div class="text-center mb-8">
+                <h1 class="text-3xl font-bold text-white mb-2">🐎 Welcome to PullRider</h1>
+                <p class="text-gray-400">Unleash your AI Code Review Sensei.</p>
+            </div>
+
+            <div class="mb-6 border-b border-gray-800">
+                <nav class="flex -mb-px" aria-label="Tabs">
+                    <button onclick="showTab('easy')" id="tab-easy" class="tab active w-1/2 py-4 px-1 text-center border-b-2 font-medium text-sm rounded-t-lg">
+                        Easy Setup
+                    </button>
+                    <button onclick="showTab('manual')" id="tab-manual" class="tab w-1/2 py-4 px-1 text-center border-b-2 font-medium text-sm rounded-t-lg">
+                        Manual Setup
+                    </button>
+                </nav>
+            </div>
+
+            <div id="content-easy">
+                <form action="/setup/save" method="post">
+                    <input type="hidden" name="installation_id" value="{{ installation_id }}">
+                    <div class="mb-6">
+                        <label for="gemini_api_key" class="block mb-2 text-sm font-medium text-gray-300">Your Gemini API Key</label>
+                        <input type="password" id="gemini_api_key" name="gemini_api_key" class="input-field block w-full p-3 rounded-lg text-gray-200" placeholder="Enter your secret key here" required>
+                        <p class="mt-2 text-xs text-gray-500">Get your key from <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-blue-500 hover:underline">Google AI Studio</a>.</p>
+                    </div>
+                    <button type="submit" class="btn-primary w-full py-3 rounded-lg font-semibold text-white">
+                        Activate Sensei
+                    </button>
+                </form>
+            </div>
+
+            <div id="content-manual" class="hidden">
+                <p class="text-sm text-gray-300 mb-4">For maximum security, set the API key yourself in GitHub.</p>
+                <ol class="list-decimal list-inside space-y-3 text-gray-400 text-sm mb-6">
+                    <li>Go to repo <span class="font-mono text-xs bg-gray-800 p-1 rounded">Settings > Secrets and variables > Actions</span>.</li>
+                    <li>Click <span class="font-bold text-gray-200">New repository secret</span>.</li>
+                    <li>Name: <code class="font-mono text-xs bg-gray-800 p-1 rounded">PULLRIDER_GEMINI_KEY</code></li>
+                    <li>Paste your key into the "Secret" value box.</li>
+                </ol>
+                <a href="/setup/success" class="btn-primary block w-full text-center py-3 rounded-lg font-semibold transition-colors">
+                    I've Set The Secret! Finish
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Tab Script ---
+        function showTab(tabName) {
+            document.getElementById('tab-easy').classList.toggle('active', tabName === 'easy');
+            document.getElementById('tab-manual').classList.toggle('active', tabName === 'manual');
+            document.getElementById('content-easy').classList.toggle('hidden', tabName !== 'easy');
+            document.getElementById('content-manual').classList.toggle('hidden', tabName !== 'manual');
+        }
+
+        // --- 3D Interactive Card Script ---
+        const card = document.getElementById('interactive-card');
+        const cardRect = card.getBoundingClientRect();
+
+        document.addEventListener('mousemove', (e) => {
+            const { clientX, clientY } = e;
+            const x = clientX - (cardRect.left + cardRect.width / 2);
+            const y = clientY - (cardRect.top + cardRect.height / 2);
+
+            const rotateY = (x / (cardRect.width / 2)) * 10; // Max rotation 10deg
+            const rotateX = -(y / (cardRect.height / 2)) * 10; // Max rotation 10deg
+
+            card.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.05)`;
+        });
+
+        document.addEventListener('mouseleave', () => {
+            card.style.transform = 'rotateX(0deg) rotateY(0deg) scale(1)';
+        });
+
+        // --- Animated Aurora Canvas Background Script ---
+        const canvas = document.getElementById('aurora-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+
+        function createParticles() {
+            particles = [];
+            let numParticles = Math.floor(canvas.width / 50);
+            for (let i = 0; i < numParticles; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    radius: Math.random() * 3 + 1,
+                    vx: Math.random() * 0.5 - 0.25,
+                    vy: Math.random() * 0.5 - 0.25,
+                    color: `rgba(${Math.random() > 0.5 ? '88, 166, 255' : '46, 160, 67'}, ${Math.random() * 0.5})`
+                });
+            }
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let particle of particles) {
+                particle.x += particle.vx;
+                particle.y += particle.vy;
+
+                if (particle.x < 0 || particle.x > canvas.width) particle.vx *= -1;
+                if (particle.y < 0 || particle.y > canvas.height) particle.vy *= -1;
+
+                ctx.beginPath();
+                let gradient = ctx.createRadialGradient(particle.x, particle.y, 0, particle.x, particle.y, particle.radius * 2);
+                gradient.addColorStop(0, particle.color);
+                gradient.addColorStop(1, 'rgba(0,0,0,0)');
+                ctx.fillStyle = gradient;
+                ctx.arc(particle.x, particle.y, particle.radius * 2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            requestAnimationFrame(animate);
+        }
+
+        window.addEventListener('resize', () => {
+            resizeCanvas();
+            createParticles();
+        });
+
+        resizeCanvas();
+        createParticles();
+        animate();
+                // --- Floating Hearts & Sparkles Overlay (extra kawaii af 💅) ---
+        const sparkleCanvas = document.createElement('canvas');
+        sparkleCanvas.id = 'sparkle-canvas';
+        sparkleCanvas.style.position = 'fixed';
+        sparkleCanvas.style.top = 0;
+        sparkleCanvas.style.left = 0;
+        sparkleCanvas.style.width = '100%';
+        sparkleCanvas.style.height = '100%';
+        sparkleCanvas.style.zIndex = '-2';
+        sparkleCanvas.style.pointerEvents = 'none';
+        document.body.appendChild(sparkleCanvas);
+
+        const sparkleCtx = sparkleCanvas.getContext('2d');
+        let sparkles = [];
+
+        function resizeSparkleCanvas() {
+            sparkleCanvas.width = window.innerWidth;
+            sparkleCanvas.height = window.innerHeight;
+        }
+
+        function createSparkles() {
+            sparkles = [];
+            for (let i = 0; i < 60; i++) {
+                sparkles.push({
+                    x: Math.random() * sparkleCanvas.width,
+                    y: Math.random() * sparkleCanvas.height,
+                    radius: Math.random() * 2 + 0.5,
+                    opacity: 0,
+                    fadingIn: true,
+                    speed: Math.random() * 0.5 + 0.2
+                });
+            }
+        }
+
+        function animateSparkles() {
+            sparkleCtx.clearRect(0, 0, sparkleCanvas.width, sparkleCanvas.height);
+            for (let sparkle of sparkles) {
+                if (sparkle.fadingIn) {
+                    sparkle.opacity += sparkle.speed * 0.02;
+                    if (sparkle.opacity >= 1) sparkle.fadingIn = false;
+                } else {
+                    sparkle.opacity -= sparkle.speed * 0.01;
+                    if (sparkle.opacity <= 0) {
+                        sparkle.x = Math.random() * sparkleCanvas.width;
+                        sparkle.y = Math.random() * sparkleCanvas.height;
+                        sparkle.fadingIn = true;
+                        sparkle.opacity = 0;
+                    }
+                }
+                sparkleCtx.beginPath();
+                sparkleCtx.arc(sparkle.x, sparkle.y, sparkle.radius, 0, Math.PI * 2);
+                sparkleCtx.fillStyle = `rgba(255, 255, 255, ${sparkle.opacity})`;
+                sparkleCtx.fill();
+            }
+            requestAnimationFrame(animateSparkles);
+        }
+
+        window.addEventListener('resize', () => {
+            resizeSparkleCanvas();
+            createSparkles();
+        });
+
+        resizeSparkleCanvas();
+        createSparkles();
+        animateSparkles();
+
+    </script>
+</body>
+</html>
